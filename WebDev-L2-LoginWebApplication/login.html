@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Access — Sign in</title>
+<link rel="stylesheet" href="login.css">
+</head>
+<body>
+
+<div class="wrap">
+
+  
+
+  <div class="panel">
+
+    <!-- ================= REGISTER VIEW ================= -->
+    <section id="registerView" class="view is-active">
+      <h1 class="panel__title">Create an account</h1>
+      <p class="panel__sub">Register a username, email and password to provision access.</p>
+
+      <div id="registerBanner" class="banner error"></div>
+
+      <form id="registerForm" novalidate>
+        <div class="field">
+          <label for="regUsername">Username</label>
+          <input id="regUsername" type="text" placeholder="e.g. j.doe" autocomplete="username">
+          <div class="field__hint is-error" id="regUsernameHint"></div>
+        </div>
+
+        <div class="field">
+          <label for="regEmail">Email</label>
+          <input id="regEmail" type="email" placeholder="you@example.com" autocomplete="email">
+          <div class="field__hint is-error" id="regEmailHint"></div>
+        </div>
+
+        <div class="field">
+          <label for="regPassword">Password</label>
+          <input id="regPassword" type="password" placeholder="At least 8 characters" autocomplete="new-password">
+          <div class="pw-checks">
+            <span id="pwLenCheck">8+ characters</span>
+            <span id="pwNumCheck">contains a number</span>
+          </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Register</button>
+        <button type="button" class="btn btn-ghost" id="goToLogin">I already have an account</button>
+      </form>
+    </section>
+
+    <!-- ================= LOGIN VIEW ================= -->
+    <section id="loginView" class="view">
+      <h1 class="panel__title">Sign in</h1>
+
+      <div id="loginBanner" class="banner error"></div>
+
+      <form id="loginForm" novalidate>
+        <div class="field">
+          <label for="loginId">Username or email</label>
+          <input id="loginId" type="text" placeholder="e.g. j.doe or you@example.com" autocomplete="username">
+          <div class="field__hint is-error" id="loginIdHint"></div>
+        </div>
+
+        <div class="field">
+          <label for="loginPassword">Password</label>
+          <input id="loginPassword" type="password" placeholder="Your password" autocomplete="current-password">
+          <div class="field__hint is-error" id="loginPasswordHint"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">Login</button>
+        <button type="button" class="btn btn-ghost" id="goToRegister">Create a new account</button>
+      </form>
+    </section>
+
+    <!-- ================= DASHBOARD VIEW ================= -->
+    <section id="dashboardView" class="view">
+      <div class="dash-head">
+        <div>
+          <h1 class="panel__title">Welcome back</h1>
+        </div>
+      </div>
+
+      <dl class="ticket">
+        <div class="ticket__row">
+          <dt>user</dt>
+          <dd id="ticketUser">—</dd>
+        </div>
+        <div class="ticket__row">
+          <dt>email</dt>
+          <dd id="ticketEmail">—</dd>
+        </div>
+        <div class="ticket__row">
+          <dt>issued</dt>
+          <dd id="ticketIssued">—</dd>
+        </div>
+      </dl>
+      <br>
+      <button type="button" class="btn btn-logout" id="logoutBtn">Log out</button>
+    </section>
+
+  </div>
+
+  <footer class="legend">LOCAL-ONLY DEMO · CREDENTIALS NEVER LEAVE THIS BROWSER</footer>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  const USERS_KEY = "access_users";
+  const SESSION_KEY = "access_session";
+
+  const $ = (id) => document.getElementById(id);
+
+  const views = {
+    register: $("registerView"),
+    login: $("loginView"),
+    dashboard: $("dashboardView"),
+  };
+  const latch = $("latchIcon");
+
+  function showView(name) {
+    Object.values(views).forEach(v => v.classList.remove("is-active"));
+    views[name].classList.add("is-active");
+    latch.classList.toggle("is-open", name === "dashboard");
+    hideBanner($("registerBanner"));
+    hideBanner($("loginBanner"));
+  }
+
+  function hideBanner(el) {
+    el.classList.remove("is-visible");
+    el.textContent = "";
+  }
+
+  function showBanner(el, message, type) {
+    el.textContent = message;
+    el.className = "banner is-visible " + (type || "error");
+  }
+
+  function setFieldError(input, hintEl, message) {
+    if (message) {
+      input.classList.add("has-error");
+      hintEl.textContent = message;
+    } else {
+      input.classList.remove("has-error");
+      hintEl.textContent = "";
+    }
+  }
+
+  function flashLatchError() {
+    latch.classList.remove("is-error");
+    void latch.offsetWidth; // restart animation
+    latch.classList.add("is-error");
+  }
+
+  // ---------- storage helpers ----------
+  function getUsers() {
+    try {
+      return JSON.parse(localStorage.getItem(USERS_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function saveUsers(users) {
+    localStorage.setItem(USERS_KEY, JSON.stringify(users));
+  }
+
+  function findUserByIdentifier(idRaw) {
+    const id = idRaw.trim().toLowerCase();
+    return getUsers().find(
+      u => u.username.toLowerCase() === id || u.email.toLowerCase() === id
+    );
+  }
+
+  // ---------- hashing (SHA-256 via Web Crypto, salted) ----------
+  async function hashPassword(password, salt) {
+    const enc = new TextEncoder();
+    const data = enc.encode(salt + ":" + password);
+    const digest = await crypto.subtle.digest("SHA-256", data);
+    return Array.from(new Uint8Array(digest))
+      .map(b => b.toString(16).padStart(2, "0"))
+      .join("");
+  }
+
+  function randomSalt() {
+    const bytes = crypto.getRandomValues(new Uint8Array(16));
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  function randomToken() {
+    const bytes = crypto.getRandomValues(new Uint8Array(12));
+    return Array.from(bytes).map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  // ---------- session ----------
+  function setSession(user) {
+    const session = {
+      username: user.username,
+      email: user.email,
+      token: randomToken(),
+      issuedAt: new Date().toISOString(),
+    };
+    localStorage.setItem(SESSION_KEY, JSON.stringify(session));
+    return session;
+  }
+
+  function getSession() {
+    try {
+      return JSON.parse(localStorage.getItem(SESSION_KEY));
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function clearSession() {
+    localStorage.removeItem(SESSION_KEY);
+  }
+
+  function renderDashboard(session) {
+    $("ticketUser").textContent = session.username;
+    $("ticketEmail").textContent = session.email;
+    $("ticketIssued").textContent = new Date(session.issuedAt).toLocaleString();
+  }
+
+  // ---------- password strength UI ----------
+  const regPassword = $("regPassword");
+  const pwLenCheck = $("pwLenCheck");
+  const pwNumCheck = $("pwNumCheck");
+
+  function passwordChecks(pw) {
+    return {
+      len: pw.length >= 8,
+      num: /\d/.test(pw),
+    };
+  }
+
+  regPassword.addEventListener("input", () => {
+    const c = passwordChecks(regPassword.value);
+    pwLenCheck.classList.toggle("ok", c.len);
+    pwNumCheck.classList.toggle("ok", c.num);
+  });
+
+  // ---------- navigation links ----------
+  $("goToLogin").addEventListener("click", () => showView("login"));
+  $("goToRegister").addEventListener("click", () => showView("register"));
+
+  // ---------- registration ----------
+  $("registerForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideBanner($("registerBanner"));
+
+    const usernameInput = $("regUsername");
+    const emailInput = $("regEmail");
+    const username = usernameInput.value.trim();
+    const email = emailInput.value.trim();
+    const password = regPassword.value;
+
+    let hasError = false;
+
+    if (!username) {
+      setFieldError(usernameInput, $("regUsernameHint"), "Username can't be empty.");
+      hasError = true;
+    } else {
+      setFieldError(usernameInput, $("regUsernameHint"), "");
+    }
+
+    if (!email) {
+      setFieldError(emailInput, $("regEmailHint"), "Email can't be empty.");
+      hasError = true;
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      setFieldError(emailInput, $("regEmailHint"), "Enter a valid email address.");
+      hasError = true;
+    } else {
+      setFieldError(emailInput, $("regEmailHint"), "");
+    }
+
+    const checks = passwordChecks(password);
+    if (!password || !checks.len || !checks.num) {
+      showBanner($("registerBanner"), "Password must be at least 8 characters and include at least 1 number.", "error");
+      flashLatchError();
+      hasError = true;
+    }
+
+    if (hasError) return;
+
+    if (findUserByIdentifier(username) || findUserByIdentifier(email)) {
+      showBanner($("registerBanner"), "An account with that username or email already exists.", "error");
+      flashLatchError();
+      return;
+    }
+
+    const salt = randomSalt();
+    const passwordHash = await hashPassword(password, salt);
+    const users = getUsers();
+    users.push({ username, email, salt, passwordHash });
+    saveUsers(users);
+
+    $("registerForm").reset();
+    pwLenCheck.classList.remove("ok");
+    pwNumCheck.classList.remove("ok");
+
+    showView("login");
+    showBanner($("loginBanner"), "Account created. Sign in with your new credentials.", "success");
+  });
+
+  // ---------- login ----------
+  $("loginForm").addEventListener("submit", async (e) => {
+    e.preventDefault();
+    hideBanner($("loginBanner"));
+
+    const idInput = $("loginId");
+    const pwInput = $("loginPassword");
+    const idValue = idInput.value.trim();
+    const password = pwInput.value;
+
+    let hasError = false;
+    if (!idValue) {
+      setFieldError(idInput, $("loginIdHint"), "This field can't be empty.");
+      hasError = true;
+    } else {
+      setFieldError(idInput, $("loginIdHint"), "");
+    }
+    if (!password) {
+      setFieldError(pwInput, $("loginPasswordHint"), "This field can't be empty.");
+      hasError = true;
+    } else {
+      setFieldError(pwInput, $("loginPasswordHint"), "");
+    }
+    if (hasError) return;
+
+    const user = findUserByIdentifier(idValue);
+
+    // Generic failure message regardless of which part was wrong,
+    // so we don't reveal whether the account exists.
+    const genericFail = () => {
+      showBanner($("loginBanner"), "Incorrect username/email or password.", "error");
+      flashLatchError();
+    };
+
+    if (!user) {
+      genericFail();
+      return;
+    }
+
+    const attemptHash = await hashPassword(password, user.salt);
+    if (attemptHash !== user.passwordHash) {
+      genericFail();
+      return;
+    }
+
+    const session = setSession(user);
+    $("loginForm").reset();
+    renderDashboard(session);
+    showView("dashboard");
+  });
+
+  // ---------- logout ----------
+  $("logoutBtn").addEventListener("click", () => {
+    clearSession();
+    showView("login");
+    showBanner($("loginBanner"), "You've been logged out.", "success");
+  });
+
+  // ---------- boot: route based on existing session ----------
+  (function init() {
+    const session = getSession();
+    if (session) {
+      renderDashboard(session);
+      showView("dashboard");
+    } else {
+      showView("login");
+    }
+  })();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,884 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,900;1,400;1,700&family=Poppins:wght@300;400;500;600;700&display=swap');
+/* ── CSS VARIABLES ── */
+:root {
+  --navy:       #0A2647;
+  --navy-mid:   #144272;
+  --navy-light: #205295;
+  --gold:       #D4AF37;
+  --gold-light: #F0D060;
+  --gold-dark:  #A88A1A;
+  --white:      #FFFFFF;
+  --bg-light:   #F8F9FA;
+  --bg-section: #EEF2F7;
+  --text-dark:  #222222;
+  --text-mid:   #444444;
+  --text-muted: #777777;
+  --shadow-sm:  0 4px 15px rgba(10,38,71,0.08);
+  --shadow-md:  0 8px 30px rgba(10,38,71,0.14);
+  --shadow-lg:  0 16px 50px rgba(10,38,71,0.20);
+  --radius-md:  15px;
+  --radius-lg:  20px;
+  --transition: all 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* ── RESET & BASE ── */
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+html {
+  scroll-behavior: smooth;
+  font-size: 16px;
+}
+
+body {
+  font-family: 'Poppins', sans-serif;
+  background-color: var(--bg-light);
+  color: var(--text-dark);
+  line-height: 1.8;
+  overflow-x: hidden;
+}
+
+/* ── CUSTOM SCROLLBAR ── */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: var(--bg-light); }
+::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, var(--gold), var(--navy-light));
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover { background: var(--gold-dark); }
+
+/* ── GLOBAL TYPOGRAPHY ── */
+h1, h2, h3, h4 {
+  font-family: 'Playfair Display', serif;
+  color: var(--navy);
+  line-height: 1.25;
+}
+
+p {
+  font-size: 1rem;
+  color: var(--text-mid);
+  line-height: 1.85;
+  margin-bottom: 14px;
+}
+
+/* ── SECTION HEADING STYLE (h1, h3 inside divs) ── */
+.intro h1,
+.about h1,
+.achieve h3,
+.lead h3,
+.company h3,
+.cont h3,
+.legacy h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  font-weight: 700;
+  color: var(--navy);
+  position: relative;
+  display: inline-block;
+  margin-bottom: 40px;
+  padding-bottom: 16px;
+}
+
+.intro h1::after,
+.about h1::after,
+.lead h3::after,
+.company h3::after,
+.cont h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.intro h1:hover::after,
+.about h1:hover::after,
+.lead h3:hover::after,
+.company h3:hover::after,
+.cont h3:hover::after {
+  width: 100%;
+}
+
+/* centered underline for about / legacy */
+.about h1::after,
+.achieve h3::after,
+.legacy h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.about h1,
+.achieve h3,
+.legacy h3 {
+  display: block;
+  text-align: center;
+}
+
+/* ── SECTION SPACING WRAPPER ── */
+.intro, .about, .company, .cont, .photo, .legacy, .tq {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 80px 28px;
+}
+
+/* .lead has its own layout — excluded from global wrapper */
+.lead {
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+/* ============================================================
+   HERO SECTION
+   ============================================================ */
+.hero {
+  min-height: 100vh;
+  background: linear-gradient(155deg, var(--navy) 0%, var(--navy-mid) 50%, #0D3B6E 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 60px 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Decorative background pattern */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 20% 80%, rgba(212,175,55,0.08) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(32,82,149,0.20) 0%, transparent 50%),
+    url("data:image/svg+xml,%3Csvg width='80' height='80' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='40' cy='40' r='1' fill='rgba(255,255,255,0.04)'/%3E%3C/svg%3E") repeat;
+  pointer-events: none;
+}
+
+/* Gold ring accent */
+.hero::after {
+  content: '';
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  border-radius: 50%;
+  border: 1px solid rgba(212,175,55,0.12);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  animation: heroRing 8s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+
+@keyframes heroRing {
+  from { transform: translate(-50%, -50%) scale(0.95); opacity: 0.6; }
+  to   { transform: translate(-50%, -50%) scale(1.05); opacity: 1;   }
+}
+
+/* Hero portrait */
+.abc {
+  width: 200px;
+  height: 200px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 5px solid var(--gold);
+  box-shadow: 0 0 0 10px rgba(212,175,55,0.15), var(--shadow-lg);
+  margin-bottom: 32px;
+  position: relative;
+  z-index: 2;
+  animation: fadeSlideDown 1s ease 0.2s both;
+}
+
+@keyframes fadeSlideDown {
+  from { opacity: 0; transform: translateY(-30px); }
+  to   { opacity: 1; transform: translateY(0);     }
+}
+
+.hero-name {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 6vw, 5rem);
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: 1px;
+  position: relative;
+  z-index: 2;
+  animation: fadeSlideUp 1s ease 0.5s both;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.3);
+}
+
+.hero-name em {
+  display: block;
+  font-family: 'Poppins', sans-serif;
+  font-style: normal;
+  font-size: clamp(0.85rem, 1.8vw, 1.05rem);
+  font-weight: 400;
+  color: var(--gold);
+  letter-spacing: 6px;
+  text-transform: uppercase;
+  margin-top: 10px;
+}
+
+.hero-tagline {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(0.95rem, 2vw, 1.15rem);
+  color: rgba(255,255,255,0.80);
+  max-width: 620px;
+  margin: 24px auto 0;
+  font-style: italic;
+  font-weight: 300;
+  line-height: 1.7;
+  position: relative;
+  z-index: 2;
+  animation: fadeSlideUp 1s ease 0.8s both;
+}
+
+@keyframes fadeSlideUp {
+  from { opacity: 0; transform: translateY(30px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* ── Scroll-down indicator ── */
+.hero-tagline::after {
+  content: '▾';
+  display: block;
+  font-size: 1.8rem;
+  color: var(--gold);
+  margin-top: 48px;
+  animation: bounce 2s ease infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0);   }
+  50%       { transform: translateY(8px); }
+}
+
+/* ============================================================
+   INTRO SECTION
+   ============================================================ */
+.intro {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  margin-top: 60px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: auto auto auto;
+  gap: 20px 48px;
+  align-items: start;
+}
+
+.intro h1 {
+  grid-column: 1;
+  grid-row: 1;
+  margin-bottom: 0;
+}
+
+.intro p:nth-of-type(1) {
+  grid-column: 1;
+  grid-row: 2;
+  margin-bottom: 0;
+}
+
+.intro p:nth-of-type(2) {
+  grid-column: 1;
+  grid-row: 3;
+  background: var(--bg-section);
+  border-left: 4px solid var(--gold);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+  padding: 18px 20px;
+  font-size: 0.95rem;
+  line-height: 2.2;
+  margin-bottom: 0;
+}
+
+.mno {
+  grid-column: 2;
+  grid-row: 1 / span 3;
+  width: 100%;
+  height: 100%;
+  min-height: 320px;
+  max-height: 460px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+  transition: var(--transition);
+  align-self: stretch;
+}
+
+.mno:hover {
+  transform: scale(1.02);
+  box-shadow: var(--shadow-lg);
+}
+
+/* ============================================================
+   ABOUT / ADORE CARDS SECTION
+   ============================================================ */
+.about {
+  background: var(--bg-section);
+  max-width: 100%;
+  padding: 80px 28px;
+}
+
+.about > h1 {
+  margin-bottom: 50px;
+}
+
+/* Card grid — uses inline-block to avoid HTML changes */
+.a-card {
+  display: inline-block;
+  vertical-align: top;
+  width: calc(50% - 20px);
+  margin: 10px;
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  box-shadow: var(--shadow-sm);
+  border-top: 4px solid var(--gold);
+  transition: var(--transition);
+  position: relative;
+  overflow: hidden;
+}
+
+.a-card::before {
+  content: '';
+  position: absolute;
+  top: 0; right: 0;
+  width: 80px; height: 80px;
+  background: radial-gradient(circle at top right, rgba(212,175,55,0.10), transparent 70%);
+  border-radius: 0 0 0 100%;
+}
+
+.a-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow-lg);
+  border-top-color: var(--navy-light);
+}
+
+.a-card h3 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--navy);
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  position: relative;
+}
+
+.a-card h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 0;
+  width: 36px; height: 2px;
+  background: var(--gold);
+  border-radius: 2px;
+  transition: width 0.3s ease;
+}
+
+.a-card:hover h3::after { width: 70px; }
+
+.a-card p {
+  font-size: 0.95rem;
+  color: var(--text-mid);
+  margin: 0;
+}
+
+/* Max-width wrapper for about inner content */
+.about > h1,
+.about > .a-card {
+  max-width: 540px;
+}
+
+/* Center the card block */
+.about {
+  text-align: center;
+}
+.about h1 { margin: 0 auto 50px; }
+.a-card { text-align: left; }
+
+/* ============================================================
+   ACHIEVEMENTS / TIMELINE SECTION
+   ============================================================ */
+.achieve {
+  background: linear-gradient(135deg, var(--navy) 0%, var(--navy-mid) 100%);
+  padding: 80px 28px;
+  text-align: center;
+}
+
+.achieve h3 {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1.6rem, 3vw, 2.4rem);
+  color: var(--gold);
+  margin-bottom: 50px;
+  display: block;
+  position: relative;
+  padding-bottom: 16px;
+}
+
+.achieve h3::after {
+  background: var(--gold);
+  left: 50%;
+  transform: translateX(-50%);
+  width: 70px;
+  height: 3px;
+}
+
+/* ── Two-column layout: image LEFT, timeline RIGHT ── */
+.achieve-inner {
+  display: flex;
+  align-items: center;
+  gap: 52px;
+  max-width: 960px;
+  margin: 0 auto;
+}
+
+/* Achievement image — LEFT column */
+.yes {
+  display: block;
+  width: 260px;
+  min-width: 260px;
+  height: 320px;
+  object-fit: cover;
+  object-position: center top;
+  border-radius: var(--radius-lg);
+  border: 4px solid rgba(212,175,55,0.5);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  flex-shrink: 0;
+}
+
+/* Hide the broken .no image */
+.no { display: none; }
+
+/* Timeline card — RIGHT column */
+.achieve-inner > p {
+  display: block;
+  text-align: left;
+  background: rgba(255,255,255,0.05);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(212,175,55,0.25);
+  border-radius: var(--radius-lg);
+  padding: 36px 44px;
+  color: rgba(255,255,255,0.9);
+  font-size: 1rem;
+  line-height: 3;
+  border-left: 4px solid var(--gold);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  flex: 1;
+  margin: 0;
+}
+
+/* ============================================================
+   LEADERSHIP PRINCIPLES SECTION
+   ============================================================ */
+.lead {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+.lead::before {
+  content: '"';
+  position: absolute;
+  top: -10px; left: 20px;
+  font-size: 14rem;
+  font-family: 'Playfair Display', serif;
+  color: rgba(212,175,55,0.07);
+  line-height: 1;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Text content wrapper — left column */
+.lead-text {
+  flex: 1;
+  padding: 60px 40px 60px 60px;
+  position: relative;
+  z-index: 1;
+}
+
+.lead h3 { margin-bottom: 32px; }
+
+.lead b {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 1.05rem;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--navy);
+  margin: 28px 0 6px;
+  padding-left: 14px;
+  border-left: 4px solid var(--gold);
+}
+
+.lead b::before {
+  content: '◆';
+  font-size: 0.5rem;
+  color: var(--gold);
+}
+
+.lead p {
+  padding-left: 18px;
+  color: var(--text-mid);
+  font-size: 0.97rem;
+  margin-bottom: 0;
+}
+
+/* Image — RIGHT column */
+.st {
+  display: block;
+  width: 350px;
+  height: 700px;
+  border-radius: var(--radius-lg);
+  flex-shrink: 0;
+  padding-bottom: 100px;
+  padding-top: 100px;
+  padding-right: 40px;
+}
+
+.st:hover { transform: scale(1.03); }
+
+/* ============================================================
+   TATA COMPANIES SECTION
+   ============================================================ */
+.company {
+  background: var(--bg-section);
+  max-width: 100%;
+  padding: 80px 28px;
+  text-align: center;
+}
+
+.company h3 {
+  margin-bottom: 48px;
+  display: inline-block;
+  position: relative;
+  padding-bottom: 16px;
+  color: var(--navy);
+}
+
+.company h3::after {
+  content: '';
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 70px; height: 3px;
+  background: linear-gradient(90deg, var(--gold), var(--gold-light));
+  border-radius: 2px;
+  transition: width 0.4s ease;
+}
+
+.xyz {
+  width: 150px;
+  height: 90px;
+  object-fit: contain;
+  margin: 12px;
+  background: var(--white);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  box-shadow: var(--shadow-sm);
+  border: 1px solid rgba(10,38,71,0.08);
+  transition: var(--transition);
+  display: inline-block;
+}
+
+.xyz:hover {
+  transform: translateY(-6px) scale(1.04);
+  box-shadow: var(--shadow-md);
+  border-color: var(--gold);
+}
+
+/* ============================================================
+   CONTRIBUTIONS TO SOCIETY SECTION
+   ============================================================ */
+.cont {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+}
+
+.cont b {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 1.02rem;
+  font-family: 'Playfair Display', serif;
+  font-weight: 700;
+  color: var(--navy);
+  background: linear-gradient(90deg, rgba(212,175,55,0.10), transparent);
+  padding: 10px 16px;
+  border-radius: 6px;
+  border-left: 4px solid var(--gold);
+  margin: 22px 0 8px;
+}
+
+.cont p {
+  padding-left: 20px;
+  color: var(--text-mid);
+  font-size: 0.96rem;
+}
+
+/* Hide broken image */
+.aa { display: none; }
+
+/* ============================================================
+   PHOTO GALLERY SECTION
+   ============================================================ */
+.photo {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+  padding: 60px 28px;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.pqr {
+  width: 100%;
+  height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: var(--transition);
+  display: block;
+}
+
+.pqr:hover {
+  transform: scale(1.05);
+  box-shadow: var(--shadow-lg);
+  z-index: 2;
+  position: relative;
+}
+
+/* ============================================================
+   LEGACY SECTION
+   ============================================================ */
+.legacy {
+  background: linear-gradient(135deg, var(--navy) 0%, #051d3a 100%);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.legacy::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(212,175,55,0.06) 0%, transparent 70%);
+  pointer-events: none;
+}
+
+.legacy h3 {
+  color: var(--gold);
+  font-size: clamp(1.8rem, 3.5vw, 2.8rem);
+  margin-bottom: 28px;
+}
+
+.legacy p {
+  color: rgba(255,255,255,0.82);
+  font-size: 1.05rem;
+  max-width: 700px;
+  margin: 0 auto;
+  font-weight: 300;
+  line-height: 2;
+}
+
+/* ============================================================
+   THANK YOU / QUOTE SECTION
+   ============================================================ */
+.tq {
+  background: var(--white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  border: 2px solid rgba(212,175,55,0.40);
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.tq::before,
+.tq::after {
+  font-family: 'Playfair Display', serif;
+  font-size: 8rem;
+  color: rgba(212,175,55,0.12);
+  position: absolute;
+  line-height: 1;
+}
+
+.tq::before { content: '\201C'; top: -10px; left: 16px; }
+.tq::after  { content: '\201D'; bottom: -40px; right: 16px; }
+
+.tq p {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(1rem, 2vw, 1.25rem);
+  font-style: italic;
+  color: var(--navy);
+  max-width: 700px;
+  margin: 0 auto;
+  font-weight: 500;
+  line-height: 1.9;
+  position: relative;
+  z-index: 1;
+}
+
+/* ============================================================
+   FOOTER SECTION
+   ============================================================ */
+.footor {
+  background: var(--navy);
+  color: rgba(255,255,255,0.70);
+  text-align: center;
+  padding: 48px 28px;
+  position: relative;
+}
+
+.footor::before {
+  content: '';
+  display: block;
+  height: 3px;
+  width: 100%;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  position: absolute;
+  top: 0; left: 0;
+}
+
+.footor p {
+  font-size: 0.92rem;
+  color: rgba(255,255,255,0.68);
+  line-height: 2.2;
+  margin: 0;
+}
+
+.footor p br + * {
+  color: var(--gold);
+  font-style: italic;
+}
+
+/* ============================================================
+   FADE-IN ANIMATION (applies to all major sections)
+   ============================================================ */
+.intro,
+.a-card,
+.achieve > p,
+.lead,
+.xyz,
+.cont,
+.pqr,
+.legacy,
+.tq {
+  animation: fadeInUp 0.7s ease both;
+}
+
+@keyframes fadeInUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+/* stagger cards */
+.a-card:nth-child(2) { animation-delay: 0.10s; }
+.a-card:nth-child(3) { animation-delay: 0.20s; }
+.a-card:nth-child(4) { animation-delay: 0.30s; }
+.a-card:nth-child(5) { animation-delay: 0.40s; }
+
+.xyz:nth-child(2) { animation-delay: 0.08s; }
+.xyz:nth-child(3) { animation-delay: 0.16s; }
+.xyz:nth-child(4) { animation-delay: 0.24s; }
+.xyz:nth-child(5) { animation-delay: 0.32s; }
+
+/* ============================================================
+   RESPONSIVE — TABLET (≤ 900px)
+   ============================================================ */
+@media (max-width: 900px) {
+  .intro {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .intro h1 { grid-column: 1; grid-row: 1; }
+  .intro p:nth-of-type(1) { grid-column: 1; grid-row: 2; }
+  .mno { grid-column: 1; grid-row: 3; max-height: 260px; align-self: auto; }
+  .intro p:nth-of-type(2) { grid-column: 1; grid-row: 4; }
+
+  .a-card {
+    width: calc(100% - 20px);
+    margin: 10px 0;
+  }
+
+  .photo {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  /* Achievements: stack on tablet */
+  .achieve-inner {
+    flex-direction: column;
+    gap: 32px;
+  }
+  .yes {
+    width: 100%;
+    min-width: unset;
+    height: 240px;
+    object-position: center 20%;
+  }
+
+  /* Leadership: stack on tablet */
+  .lead {
+    flex-direction: column;
+  }
+  .lead-text {
+    padding: 48px 40px 40px;
+  }
+  .st {
+    width: 100%;
+    min-width: unset;
+    min-height: unset;
+    height: 260px;
+  }
+}
+
+/* ============================================================
+   RESPONSIVE — MOBILE (≤ 600px)
+   ============================================================ */
+@media (max-width: 600px) {
+  .hero-name { font-size: 2.2rem; }
+  .abc { width: 150px; height: 150px; }
+
+  .intro, .cont, .legacy, .tq {
+    padding: 40px 20px;
+  }
+
+  .achieve-inner > p { padding: 24px 20px; line-height: 2.6; }
+  .yes { height: 200px; }
+
+  .photo {
+    grid-template-columns: 1fr;
+  }
+
+  .pqr { height: 200px; }
+
+  .xyz { width: 110px; height: 70px; }
+
+  .tq::before, .tq::after { font-size: 5rem; }
+
+  .a-card { padding: 24px 18px; }
+
+  .lead-text { padding: 40px 20px 32px; }
+  .st { height: 200px; }
+}

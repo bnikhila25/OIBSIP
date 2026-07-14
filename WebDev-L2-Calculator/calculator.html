@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Calculator</title>
+  <link rel="stylesheet" href="cal.css"/>
+</head>
+<body>
+<div class="calculator" role="application" aria-label="Calculator">
+
+  <div class="display">
+    <div class="expression" id="expression" aria-live="polite"></div>
+    <div class="result"     id="result"     aria-live="assertive">0</div>
+  </div>
+
+  <div class="buttons" id="buttons">
+    <!-- Row 1 -->
+    <button class="btn-clear"   data-action="clear"    aria-label="Clear all">AC</button>
+    <button class="btn-special" data-action="sign"     aria-label="Toggle sign">+/−</button>
+    <button class="btn-special" data-action="percent"  aria-label="Percent">%</button>
+    <button class="btn-op"      data-action="operator" data-value="÷" aria-label="Divide">÷</button>
+
+    <!-- Row 2 -->
+    <button class="btn-num" data-action="digit" data-value="7">7</button>
+    <button class="btn-num" data-action="digit" data-value="8">8</button>
+    <button class="btn-num" data-action="digit" data-value="9">9</button>
+    <button class="btn-op"  data-action="operator" data-value="×" aria-label="Multiply">×</button>
+
+    <!-- Row 3 -->
+    <button class="btn-num" data-action="digit" data-value="4">4</button>
+    <button class="btn-num" data-action="digit" data-value="5">5</button>
+    <button class="btn-num" data-action="digit" data-value="6">6</button>
+    <button class="btn-op"  data-action="operator" data-value="−" aria-label="Subtract">−</button>
+
+    <!-- Row 4 -->
+    <button class="btn-num" data-action="digit" data-value="1">1</button>
+    <button class="btn-num" data-action="digit" data-value="2">2</button>
+    <button class="btn-num" data-action="digit" data-value="3">3</button>
+    <button class="btn-op"  data-action="operator" data-value="+" aria-label="Add">+</button>
+
+    <!-- Row 5 -->
+    <button class="btn-num span2" data-action="digit" data-value="0" aria-label="Zero">0</button>
+    <button class="btn-special"   data-action="decimal" aria-label="Decimal point">.</button>
+    <button class="btn-eq"        data-action="equals"  aria-label="Equals">=</button>
+  </div>
+</div>
+<script>
+  /* ── State ── */
+  const state = {
+    current:      '0',   // number being built
+    previous:     null,  // first operand
+    operator:     null,  // pending operator
+    justEvaled:   false, // did we just press =?
+    expression:   '',    // display expression string
+  };
+
+  const opMap = { '÷': '/', '×': '*', '−': '-', '+': '+' };
+
+  /* ── DOM refs ── */
+  const exprEl   = document.getElementById('expression');
+  const resultEl = document.getElementById('result');
+
+  /* ── Render ── */
+  function render() {
+    resultEl.classList.remove('shrink', 'error');
+    if (state.current.length > 9)  resultEl.classList.add('shrink');
+    resultEl.textContent = state.current;
+    exprEl.textContent   = state.expression;
+  }
+
+  /* ── Helpers ── */
+  function fmt(n) {
+    // Trim floating-point noise, max 10 significant digits
+    let s = parseFloat(n.toPrecision(10)).toString();
+    return s;
+  }
+
+  function evaluate(a, op, b) {
+    const x = parseFloat(a), y = parseFloat(b);
+    if (isNaN(x) || isNaN(y)) return 'Error';
+    switch (op) {
+      case '+': return fmt(x + y);
+      case '-': return fmt(x - y);
+      case '*': return fmt(x * y);
+      case '/':
+        if (y === 0) return 'Cannot ÷ by 0';
+        return fmt(x / y);
+    }
+  }
+
+  /* ── Actions ── */
+  function handleDigit(d) {
+    if (state.justEvaled) {
+      state.current    = d;
+      state.expression = '';
+      state.justEvaled = false;
+    } else if (state.current === '0' && d !== '.') {
+      state.current = d;
+    } else if (state.current.length < 12) {
+      state.current += d;
+    }
+  }
+
+  function handleDecimal() {
+    if (state.justEvaled) {
+      state.current    = '0.';
+      state.expression = '';
+      state.justEvaled = false;
+      return;
+    }
+    if (!state.current.includes('.')) {
+      state.current += '.';
+    }
+  }
+
+  function handleOperator(op) {
+    const jsOp = opMap[op];
+
+    // If there's already a pending operation, resolve it first
+    if (state.operator && state.previous !== null && !state.justEvaled) {
+      const result = evaluate(state.previous, state.operator, state.current);
+      if (result.startsWith('Cannot') || result === 'Error') {
+        state.current    = result;
+        state.previous   = null;
+        state.operator   = null;
+        state.expression = '';
+        state.justEvaled = false;
+        render();
+        resultEl.classList.add('error');
+        return;
+      }
+      state.current  = result;
+    }
+
+    state.previous   = state.current;
+    state.operator   = jsOp;
+    state.expression = state.current + ' ' + op;
+    state.justEvaled = false;
+    // Next digit will replace current
+    state.current    = state.current; // keep showing until next digit
+    // Flag: next digit input should start fresh
+    state._expectNew = true;
+  }
+
+  // Patch handleDigit to respect _expectNew
+  const _origHandleDigit = handleDigit;
+  function handleDigitSafe(d) {
+    if (state._expectNew) {
+      state.current    = d === '.' ? '0' : d;
+      state._expectNew = false;
+    } else {
+      _origHandleDigit(d);
+    }
+  }
+
+  function handleEquals() {
+    if (state.operator === null || state.previous === null) return;
+
+    const b = state.justEvaled ? state._lastB : state.current;
+    state._lastB = b;
+
+    state.expression = state.previous + ' ' + 
+                       Object.keys(opMap).find(k => opMap[k] === state.operator) + 
+                       ' ' + b + ' =';
+
+    const result = evaluate(state.previous, state.operator, b);
+
+    if (result.startsWith('Cannot') || result === 'Error') {
+      state.current    = result;
+      state.previous   = null;
+      state.operator   = null;
+      state.justEvaled = false;
+      state._expectNew = false;
+      render();
+      resultEl.classList.add('error');
+      return;
+    }
+
+    state.previous   = result;
+    state.current    = result;
+    state.justEvaled = true;
+    state._expectNew = false;
+  }
+
+  function handleClear() {
+    state.current    = '0';
+    state.previous   = null;
+    state.operator   = null;
+    state.justEvaled = false;
+    state._expectNew = false;
+    state._lastB     = null;
+    state.expression = '';
+  }
+
+  function handleSign() {
+    if (state.current === '0' || state.current === 'Error') return;
+    state.current = state.current.startsWith('-')
+      ? state.current.slice(1)
+      : '-' + state.current;
+  }
+
+  function handlePercent() {
+    const n = parseFloat(state.current);
+    if (!isNaN(n)) state.current = fmt(n / 100);
+  }
+
+  /* ── Event delegation ── */
+  document.getElementById('buttons').addEventListener('click', e => {
+    const btn = e.target.closest('button');
+    if (!btn) return;
+
+    // Ripple
+    const r = document.createElement('span');
+    r.classList.add('ripple');
+    const rect = btn.getBoundingClientRect();
+    const size = Math.max(rect.width, rect.height);
+    r.style.cssText = `width:${size}px;height:${size}px;left:${e.clientX-rect.left-size/2}px;top:${e.clientY-rect.top-size/2}px`;
+    btn.appendChild(r);
+    r.addEventListener('animationend', () => r.remove());
+
+    const { action, value } = btn.dataset;
+
+    switch (action) {
+      case 'digit':    handleDigitSafe(value); break;
+      case 'decimal':  handleDecimal();         break;
+      case 'operator': handleOperator(value);   break;
+      case 'equals':   handleEquals();          break;
+      case 'clear':    handleClear();           break;
+      case 'sign':     handleSign();            break;
+      case 'percent':  handlePercent();         break;
+    }
+
+    render();
+  });
+
+  /* ── Keyboard support ── */
+  document.addEventListener('keydown', e => {
+    const key = e.key;
+
+    if (key >= '0' && key <= '9') { handleDigitSafe(key); render(); return; }
+    if (key === '.')               { handleDecimal();      render(); return; }
+    if (key === 'Enter' || key === '=') { handleEquals();  render(); return; }
+    if (key === 'Backspace')       {
+      if (state.current.length > 1 && !state.justEvaled) {
+        state.current = state.current.slice(0, -1) || '0';
+      } else {
+        state.current = '0';
+      }
+      render(); return;
+    }
+    if (key === 'Escape') { handleClear(); render(); return; }
+    if (key === '%')      { handlePercent(); render(); return; }
+
+    const opKeys = { '+': '+', '-': '−', '*': '×', '/': '÷' };
+    if (opKeys[key]) { handleOperator(opKeys[key]); render(); }
+  });
+
+  render();
+</script>
+</body>
+</html>

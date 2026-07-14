@@ -1,0 +1,193 @@
+@import url("https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Inter:wght@400;600&display=swap");
+/* ── Reset ── */
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+/* ── CSS Variables (Design Tokens) ── */
+:root {
+  --bg:         #1a1a2e;
+  --surface:    #16213e;
+  --panel:      #0f3460;
+  --accent:     #e94560;
+  --accent2:    #533483;
+  --op-btn:     #1a4a7a;
+  --num-btn:    #1e2a4a;
+  --eq-btn:     #e94560;
+  --text:       #eaeaea;
+  --muted:      #7a8ab0;
+  --display-bg: #0a0f1e;
+  --radius:     14px;
+  --shadow:     0 20px 60px rgba(0, 0, 0, 0.55);
+}
+/* ── Body ── */
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg);
+  background-image:
+    radial-gradient(ellipse at 20% 30%, #533483 0%, transparent 55%),
+    radial-gradient(ellipse at 80% 70%, #0f3460 0%, transparent 55%);
+  font-family: 'Inter', sans-serif;
+}
+
+/* ── Calculator Container ── */
+.calculator {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px;
+  width: 320px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* ── Display Screen ── */
+.display {
+  background: var(--display-bg);
+  border-radius: 10px;
+  padding: 16px 20px 12px;
+  margin-bottom: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  min-height: 90px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  gap: 4px;
+  overflow: hidden;
+}
+
+/* Expression (top line — shows running calculation) */
+.display .expression {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 13px;
+  color: var(--muted);
+  min-height: 18px;
+  word-break: break-all;
+  text-align: right;
+}
+
+/* Result (bottom line — shows current number) */
+.display .result {
+  font-family: 'Share Tech Mono', monospace;
+  font-size: 36px;
+  color: var(--text);
+  word-break: break-all;
+  text-align: right;
+  transition: font-size 0.15s;
+}
+
+/* Auto-shrink for long numbers */
+.display .result.shrink {
+  font-size: 24px;
+}
+
+/* Error state */
+.display .result.error {
+  color: var(--accent);
+  font-size: 20px;
+}
+
+/* ── Button Grid (CSS Grid Layout) ── */
+.buttons {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+/* ── Base Button Styles ── */
+button {
+  border: none;
+  border-radius: 10px;
+  font-family: 'Inter', sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  height: 62px;
+  cursor: pointer;
+  transition: transform 0.08s, filter 0.1s, box-shadow 0.1s;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+}
+
+/* Keyboard focus ring */
+button:focus-visible {
+  box-shadow: 0 0 0 3px var(--accent);
+}
+
+/* Hover overlay via pseudo-element */
+button::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: white;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+button:hover::after  { opacity: 0.06; }
+button:active        { transform: scale(0.94); }
+button:active::after { opacity: 0.12; }
+
+/* ── Button Colour Variants ── */
+
+/* Number buttons (0–9) */
+.btn-num {
+  background: var(--num-btn);
+  color: var(--text);
+}
+
+/* Operator buttons (÷ × − +) */
+.btn-op {
+  background: var(--op-btn);
+  color: #60b4ff;
+}
+
+/* Special function buttons (AC, +/−, %) */
+.btn-special {
+  background: var(--panel);
+  color: var(--muted);
+  font-size: 15px;
+}
+
+/* Clear button (AC) */
+.btn-clear {
+  background: rgba(233, 69, 96, 0.18);
+  color: var(--accent);
+}
+
+/* Equals button (=) */
+.btn-eq {
+  background: var(--eq-btn);
+  color: #fff;
+  box-shadow: 0 4px 18px rgba(233, 69, 96, 0.4);
+}
+
+.btn-eq:hover {
+  box-shadow: 0 6px 24px rgba(233, 69, 96, 0.6);
+}
+
+/* Span 2 columns (used for the 0 button) */
+.span2 {
+  grid-column: span 2;
+}
+
+/* ── Ripple Effect ── */
+.ripple {
+  position: absolute;
+  border-radius: 50%;
+  transform: scale(0);
+  animation: ripple-anim 0.45s linear;
+  background: rgba(255, 255, 255, 0.25);
+  pointer-events: none;
+}
+
+@keyframes ripple-anim {
+  to {
+    transform: scale(4);
+    opacity: 0;
+  }
+}

@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Daily Ledger — Task Book</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="todo.css">
+</head>
+<body>
+
+<div class="book">
+  <header>
+    <div class="eyebrow">Ledger No. 1</div>
+    <h1>The Daily Ledger</h1>
+    <div class="today" id="today"></div>
+  </header>
+
+  <form class="entry-line" id="entryForm">
+    <input type="text" id="taskInput" placeholder="Enter a new line item…" maxlength="200" autocomplete="off">
+    <button type="submit" class="btn btn-primary">+ Add Task</button>
+  </form>
+
+  <div class="pages">
+    <section class="page pending">
+      <div class="page-head">
+        <h2>Pending Entries</h2>
+        <span class="count" id="pendingCount">0 pending</span>
+      </div>
+      <ul class="tasks" id="pendingList"></ul>
+      <div class="empty" id="pendingEmpty" hidden>The pending page is blank. Add a task above to open an entry.</div>
+    </section>
+
+    <section class="page completed">
+      <div class="page-head">
+        <h2>Filed / Completed</h2>
+        <span class="count" id="completedCount">0 completed</span>
+      </div>
+      <ul class="tasks" id="completedList"></ul>
+      <div class="empty" id="completedEmpty" hidden>Nothing filed yet. Check off a task to move it here.</div>
+    </section>
+  </div>
+
+  <footer id="saveStatus">Entries are saved automatically.</footer>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'ledger:tasks';
+  const entryForm = document.getElementById('entryForm');
+  const taskInput = document.getElementById('taskInput');
+  const pendingList = document.getElementById('pendingList');
+  const completedList = document.getElementById('completedList');
+  const pendingCount = document.getElementById('pendingCount');
+  const completedCount = document.getElementById('completedCount');
+  const pendingEmpty = document.getElementById('pendingEmpty');
+  const completedEmpty = document.getElementById('completedEmpty');
+  const saveStatus = document.getElementById('saveStatus');
+  const todayEl = document.getElementById('today');
+
+  todayEl.textContent = new Date().toLocaleDateString(undefined, {
+    weekday:'long', year:'numeric', month:'long', day:'numeric'
+  });
+
+  let tasks = [];
+  let editingId = null;
+
+  function uid(){
+    return 't_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,7);
+  }
+
+  function fmtTime(ts){
+    if(!ts) return '';
+    const d = new Date(ts);
+    return d.toLocaleDateString(undefined,{month:'short', day:'numeric'}) + ' · ' +
+           d.toLocaleTimeString(undefined,{hour:'numeric', minute:'2-digit'});
+  }
+
+  async function loadTasks(){
+    try{
+      const result = await window.storage.get(STORAGE_KEY, false);
+      if(result && result.value){
+        tasks = JSON.parse(result.value);
+      }
+    }catch(e){
+      tasks = [];
+    }
+    render();
+  }
+
+  async function persist(){
+    saveStatus.textContent = 'Saving…';
+    try{
+      const ok = await window.storage.set(STORAGE_KEY, JSON.stringify(tasks), false);
+      saveStatus.textContent = ok ? 'Entries are saved automatically.' : 'Could not save — changes may not persist.';
+    }catch(e){
+      saveStatus.textContent = 'Could not save — changes may not persist.';
+    }
+  }
+
+  function addTask(text){
+    tasks.unshift({
+      id: uid(),
+      text: text,
+      done: false,
+      createdAt: Date.now(),
+      completedAt: null
+    });
+    render();
+    persist();
+  }
+
+  function toggleTask(id){
+    const t = tasks.find(x => x.id === id);
+    if(!t) return;
+    t.done = !t.done;
+    t.completedAt = t.done ? Date.now() : null;
+    render(t.done ? id : null);
+    persist();
+  }
+
+  function deleteTask(id){
+    tasks = tasks.filter(x => x.id !== id);
+    render();
+    persist();
+  }
+
+  function startEdit(id){
+    editingId = id;
+    render();
+  }
+
+  function saveEdit(id, value){
+    const t = tasks.find(x => x.id === id);
+    const trimmed = value.trim();
+    if(t && trimmed){
+      t.text = trimmed;
+    }
+    editingId = null;
+    render();
+    persist();
+  }
+
+  function cancelEdit(){
+    editingId = null;
+    render();
+  }
+
+  function taskRow(t, justCompletedId){
+    const li = document.createElement('li');
+    li.className = 'task' + (t.done ? ' done' : '');
+
+    // tick
+    const tick = document.createElement('button');
+    tick.className = 'tick';
+    tick.type = 'button';
+    tick.setAttribute('aria-label', t.done ? 'Mark as pending' : 'Mark complete');
+    tick.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+    tick.addEventListener('click', () => toggleTask(t.id));
+
+    // body
+    const body = document.createElement('div');
+    body.className = 'task-body';
+
+    if(editingId === t.id){
+      const input = document.createElement('input');
+      input.className = 'edit-input';
+      input.type = 'text';
+      input.value = t.text;
+      input.maxLength = 200;
+      body.appendChild(input);
+      setTimeout(() => { input.focus(); input.setSelectionRange(input.value.length, input.value.length); }, 0);
+      input.addEventListener('keydown', (e) => {
+        if(e.key === 'Enter'){ saveEdit(t.id, input.value); }
+        if(e.key === 'Escape'){ cancelEdit(); }
+      });
+      input.addEventListener('blur', () => saveEdit(t.id, input.value));
+    } else {
+      const textEl = document.createElement('div');
+      textEl.className = 'task-text';
+      textEl.textContent = t.text;
+      body.appendChild(textEl);
+
+      const timeEl = document.createElement('div');
+      timeEl.className = 'task-time';
+      timeEl.textContent = t.done
+        ? 'Filed ' + fmtTime(t.completedAt) + ' · opened ' + fmtTime(t.createdAt)
+        : 'Opened ' + fmtTime(t.createdAt);
+      body.appendChild(timeEl);
+    }
+
+    // actions
+    const actions = document.createElement('div');
+    actions.className = 'task-actions';
+
+    if(editingId !== t.id){
+      const editBtn = document.createElement('button');
+      editBtn.className = 'icon-btn';
+      editBtn.type = 'button';
+      editBtn.setAttribute('aria-label', 'Edit task');
+      editBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"></path><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z"></path></svg>';
+      editBtn.addEventListener('click', () => startEdit(t.id));
+      actions.appendChild(editBtn);
+    }
+
+    const delBtn = document.createElement('button');
+    delBtn.className = 'icon-btn danger';
+    delBtn.type = 'button';
+    delBtn.setAttribute('aria-label', 'Delete task');
+    delBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"></path><path d="M10 11v6"></path><path d="M14 11v6"></path><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"></path></svg>';
+    delBtn.addEventListener('click', () => deleteTask(t.id));
+    actions.appendChild(delBtn);
+
+    li.appendChild(tick);
+    li.appendChild(body);
+    li.appendChild(actions);
+
+    if(justCompletedId === t.id){
+      const stamp = document.createElement('div');
+      stamp.className = 'stamp';
+      stamp.textContent = 'FILED';
+      li.appendChild(stamp);
+    }
+
+    return li;
+  }
+
+  function render(justCompletedId){
+    const pending = tasks.filter(t => !t.done);
+    const completed = tasks.filter(t => t.done).sort((a,b) => (b.completedAt||0) - (a.completedAt||0));
+
+    pendingList.innerHTML = '';
+    completedList.innerHTML = '';
+
+    pending.forEach(t => pendingList.appendChild(taskRow(t, justCompletedId)));
+    completed.forEach(t => completedList.appendChild(taskRow(t, justCompletedId)));
+
+    pendingCount.textContent = pending.length + (pending.length === 1 ? ' pending' : ' pending');
+    completedCount.textContent = completed.length + (completed.length === 1 ? ' completed' : ' completed');
+
+    pendingEmpty.hidden = pending.length !== 0;
+    completedEmpty.hidden = completed.length !== 0;
+  }
+
+  entryForm.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const value = taskInput.value.trim();
+    if(!value) return;
+    addTask(value);
+    taskInput.value = '';
+    taskInput.focus();
+  });
+
+  loadTasks();
+})();
+</script>
+
+</body>
+</html>
