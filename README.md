@@ -67,12 +67,3 @@ OIBSIP/
 └── WebDev-L2-TributePage/
 ```
 
-## 👩‍💻 Author
-
-**Nikhila**
-
-B.Tech – Computer Science & Engineering
-
-## 📜 License
-
-This repository is created for educational purposes as part of the **Oasis Infobyte Internship Program (OIBSIP)**.
