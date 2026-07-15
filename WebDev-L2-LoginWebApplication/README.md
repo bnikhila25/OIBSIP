@@ -33,13 +33,6 @@ This project demonstrates a complete client-side authentication workflow with an
 - HTML5
 - CSS3
 - JavaScript (ES6)
-- Local Storage API
-- Web Crypto API (SHA-256)
-- Google Fonts
-- Flexbox
-- CSS Variables
-- CSS Animations
-- Media Queries
 
 ---
 
